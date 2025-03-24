@@ -2,14 +2,9 @@ import React from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../App';
 
-type RootStackParamList = {
-  Appointments: undefined;
-  Reports: undefined;
-  ChatBot: undefined;
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Dashboard'>;
 
 const Dashboard: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();

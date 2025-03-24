@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import axios from 'axios';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Dashboard: undefined;
 };
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const Register: React.FC = () => {
   const [name, setName] = useState('');
@@ -16,7 +14,7 @@ const Register: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('');
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleRegister = async () => {
     try {

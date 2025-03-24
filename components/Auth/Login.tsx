@@ -1,29 +1,35 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import axios, { AxiosError } from 'axios';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import axios from 'axios';
 
 type RootStackParamList = {
   Dashboard: undefined;
   Register: undefined;
 };
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLogin = async () => {
     try {
       const res = await axios.post('http://your-backend-api/api/auth/login', { email, password });
-      // Handle successful login (e.g., store token, navigate to dashboard)
+      // Assume backend returns a token or success response
+      Alert.alert('Success', 'Login successful!');
       navigation.navigate('Dashboard');
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
-      // Handle login error
+      const error = err as AxiosError<{
+        message?: string;
+        [key: string]: any;
+      }>;
+      Alert.alert(
+        'Login Failed',
+        error.response?.data?.message || 'Invalid email or password.'
+      );
     }
   };
 
