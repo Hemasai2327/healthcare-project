@@ -1,106 +1,138 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import DocumentPicker, {
-  types,
-  DocumentPickerResponse,
-  isCancel,
-} from 'react-native-document-picker';
+import { 
+  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator 
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import * as DocumentPicker from 'expo-document-picker';
 import axios from 'axios';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { AntDesign } from '@expo/vector-icons';
 
-const UploadReports: React.FC = () => {
-  const [reportName, setReportName] = useState('');
-  const [file, setFile] = useState<DocumentPickerResponse | null>(null);
+type RootStackParamList = {
+  ViewReports: undefined;
+  // Add other screens here as needed
+};
 
-  const handleFilePick = async () => {
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'ViewReports'>;
+
+const UploadReport: React.FC = () => {
+  const navigation = useNavigation<NavigationProp>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDocumentPick = async () => {
     try {
-      const res = await DocumentPicker.pick({
-        type: [types.allFiles],
+      const result = await DocumentPicker.getDocumentAsync({
+        type: "application/pdf",
+        copyToCacheDirectory: true,
+        multiple: false,
       });
-      if (Array.isArray(res)) {
-        setFile(res[0]);
-      } else {
-        setFile(res);
+
+      if (result.canceled) {
+        console.log('User cancelled document picker');
+        return;
       }
-    } catch (err) {
-      if (isCancel(err)) {
-        // User cancelled the picker
+
+      if (result.assets && result.assets[0]) {
+        const file = result.assets[0];
+        const formData = new FormData();
+        formData.append('file', {
+          uri: file.uri,
+          type: file.mimeType || 'application/pdf',
+          name: file.name,
+        } as unknown as Blob);
+
+        try {
+          setLoading(true);
+          const response = await axios.post('http://localhost:5000/api/reports/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+
+          if (response.data.success) {
+            navigation.navigate('ViewReports');
+          } else {
+            setError('Failed to upload report');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          setError('Error uploading report');
+        } finally {
+          setLoading(false);
+        }
       } else {
-        console.error(err);
-        Alert.alert('Error', 'Failed to pick file.');
+        console.log('No document selected');
+        setError('No document selected');
       }
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!reportName || !file) {
-      Alert.alert('Error', 'Please provide a report name and select a file.');
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append('reportName', reportName);
-    
-    // Create a blob from the file uri
-    const fileBlob = await new Promise<Blob>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.onload = () => {
-        resolve(xhr.response);
-      };
-      xhr.onerror = reject;
-      xhr.responseType = 'blob';
-      xhr.open('GET', file.uri, true);
-      xhr.send();
-    });
-
-    formData.append('file', fileBlob, file.name || 'report');
-
-    try {
-      const res = await axios.post('http://your-backend-api/api/reports/upload', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      Alert.alert('Success', 'Report uploaded successfully!');
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Error', 'Failed to upload report.');
+    } catch (error) {
+      console.error('Document picker error:', error);
+      setError('Error selecting document');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Report Name:</Text>
-      <TextInput
-        style={styles.input}
-        value={reportName}
-        onChangeText={setReportName}
-        placeholder="Enter report name"
-      />
-      <Button title="Pick File" onPress={handleFilePick} />
-      {file && <Text>Selected File: {file.name}</Text>}
-      <Button title="Upload Report" onPress={handleUpload} />
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <AntDesign name="arrowleft" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Upload Medical Reports</Text>
+      </View>
+
+      <View style={styles.content}>
+        <Text style={styles.title}>Upload Your Medical Reports</Text>
+        <Text style={styles.subtitle}>
+          Upload your medical reports in PDF format for secure storage and easy access.
+        </Text>
+
+        {error && (
+          <Text style={styles.error}>{error}</Text>
+        )}
+
+        <TouchableOpacity 
+          style={[styles.uploadButton, loading && styles.uploadButtonLoading]} 
+          onPress={handleDocumentPick}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.uploadButtonText}>Choose File</Text>
+          )}
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  label: {
-    fontSize: 16,
-    marginBottom: 8,
+  headerTitle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 12,
-    paddingHorizontal: 8,
-    borderRadius: 5,
+  content: { flex: 1, padding: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center' },
+  subtitle: { fontSize: 16, color: '#666', marginBottom: 32, textAlign: 'center' },
+  error: { color: 'red', textAlign: 'center', marginBottom: 16 },
+  uploadButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
   },
+  uploadButtonLoading: { opacity: 0.7 },
+  uploadButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
 });
 
-export default UploadReports;
+export default UploadReport;

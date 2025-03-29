@@ -3,15 +3,16 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 // Import screens
 import Login from './components/Auth/Login';
 import Register from './components/Auth/Register';
-import DashboardScreen from './screens/DashboardScreen';
-import AppointmentScreen from './screens/AppointmentScreen';
-import ReportScreen from './screens/ReportScreen';
-import ChatBotScreen from './screens/ChatBotScreen';
+import DashboardScreen from './components/screens/DashboardScreen';
+import AppointmentScreen from './components/screens/AppointmentScreen';
+import ReportScreen from './components/screens/ReportScreen';
+import ChatBotScreen from './components/screens/ChatBotScreen';
+import UploadReport from './components/MedicalReports/UploadReport';
+import ViewReports from './components/MedicalReports/ViewReports';
 
 // Define types for navigation
 export type RootStackParamList = {
@@ -21,6 +22,8 @@ export type RootStackParamList = {
   Appointments: undefined;
   Reports: undefined;
   ChatBot: undefined;
+  UploadReports: undefined;
+  ViewReports: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,6 +46,8 @@ const StackNavigator = () => {
       <Stack.Screen name="Appointments" component={AppointmentScreen} options={{ title: 'My Appointments' }} />
       <Stack.Screen name="Reports" component={ReportScreen} options={{ title: 'Medical Reports' }} />
       <Stack.Screen name="ChatBot" component={ChatBotScreen} options={{ title: 'Health Assistant' }} />
+      <Stack.Screen name="UploadReports" component={UploadReport} options={{ title: 'Upload Reports' }} />
+      <Stack.Screen name="ViewReports" component={ViewReports} options={{ title: 'View Reports' }} />
     </Stack.Navigator>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
@@ -18,12 +18,48 @@ const Register: React.FC = () => {
 
   const handleRegister = async () => {
     try {
-      const res = await axios.post('http://your-backend-api/api/auth/register', { name, email, phone, password, role });
-      // Handle successful registration (e.g., store token, navigate to dashboard)
-      navigation.navigate('Dashboard');
+      console.log('Attempting to register with:', { name, email, phone, password, role });
+      
+      // Validate required fields
+      if (!name || !email || !password || !phone) {
+        Alert.alert('Error', 'Please fill in all required fields');
+        return;
+      }
+
+      const apiUrl = 'http://192.168.1.67:5000/api/auth/register';
+      console.log('Making request to:', apiUrl);
+      
+      const res = await axios.post(apiUrl, { 
+        name, 
+        email, 
+        phone, 
+        password, 
+        role: role || 'user' // Set default role if not specified
+      });
+      
+      console.log('Registration successful:', res.data);
+      Alert.alert('Success', 'Registration successful!', [
+        { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+      ]);
     } catch (err) {
-      console.error(err);
-      // Handle registration error
+      const error = err as AxiosError<{ message: string }>;
+      console.error('Registration error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
+      
+      // Handle registration error with more specific messages
+      const errorMessage = error.response?.data?.message 
+        || (error.message === 'Network Error' ? 'Cannot connect to server. Please check your internet connection.' : error.message)
+        || 'An unexpected error occurred';
+      
+      Alert.alert('Registration Failed', errorMessage);
     }
   };
 

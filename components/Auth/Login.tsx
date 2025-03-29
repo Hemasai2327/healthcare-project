@@ -1,46 +1,55 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import axios, { AxiosError } from 'axios';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { login } from '../../src/services/api';
 
-type RootStackParamList = {
-  Dashboard: undefined;
-  Register: undefined;
-};
-
-const Login: React.FC = () => {
+const Login = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     try {
-      const res = await axios.post('http://your-backend-api/api/auth/login', { email, password });
-      // Assume backend returns a token or success response
-      Alert.alert('Success', 'Login successful!');
+      setLoading(true);
+      const response = await login(email, password);
+      await AsyncStorage.setItem('token', response.data.token);
       navigation.navigate('Dashboard');
-    } catch (err: unknown) {
-      console.error(err);
-      const error = err as AxiosError<{
-        message?: string;
-        [key: string]: any;
-      }>;
-      Alert.alert(
-        'Login Failed',
-        error.response?.data?.message || 'Invalid email or password.'
-      );
+    } catch (error: any) {
+      const errorMessage: string = error.response?.data?.message || error.message || 'Login failed';
+      Alert.alert({ title: 'Error', message: errorMessage });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text>Email:</Text>
-      <TextInput style={styles.input} value={email} onChangeText={setEmail} />
-      <Text>Password:</Text>
-      <TextInput style={styles.input} value={password} onChangeText={setPassword} secureTextEntry />
-      <Button title="Login" onPress={handleLogin} />
-      <Button title="Register" onPress={() => navigation.navigate('Register')} />
+      <TextInput
+        style={styles.input}
+        placeholder="Email"
+        value={email}
+        onChangeText={setEmail}
+        keyboardType="email-address"
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
+      <TouchableOpacity 
+        style={styles.button} 
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Loading...' : 'Login'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -49,14 +58,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 16,
+    padding: 20,
   },
   input: {
     height: 40,
     borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 12,
-    padding: 8,
+    marginBottom: 10,
+    padding: 10,
+    borderRadius: 5,
+  },
+  button: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
 
